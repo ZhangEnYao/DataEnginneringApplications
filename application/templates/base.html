@@ -1,0 +1,60 @@
+{% extends "bootstrap/base.html" %}
+    
+{% block title %}
+Data Engineering Team Application Center
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-light">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                Application Center
+            </a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="nav navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Data Manipulation
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('database_accessor.index') }}">Database Accessor</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Data Analyzation
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('exploratory_data_analysis.index') }}">Exploratory Data Analysis</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {% if current_user.is_authenticated %}
+                <li>
+                    <a href="{{ url_for('authority.logout') }}">
+                        Log Out
+                    </a>
+                </li>
+                {% else %}
+                <li>
+                    <a href="{{ url_for('authority.login') }}">
+                        Log In
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% include "utensils/messages.html" %}
+    {% block page_content %}
+    {% endblock %}
+</div>
+{% endblock %}å
