@@ -135,17 +135,18 @@ class Callbacks:
             id_changed_instance = changed_cell['rowId']
             value = changed_cell['value']
 
+            ids_selected_instances = [instance['id'] for instance in instances_selected]
+            if id_changed_instance not in ids_selected_instances:
+                ids_selected_instances = [id_changed_instance]
+                instances_selected = [changed_cell['data']]
+
             # Updated instances
             instances_updated = deepcopy(instances_selected)
             for instance in instances_updated:
                 instance[changed_column] = value
             
-            
             ids_updated_instances = [instance['id'] for instance in logs_updated_instances]
             newest_updated_instances = [instance for instance in instances_updated if instance['id'] not in ids_updated_instances]
-
-            print(instances_updated)
-            print(ids_updated_instances)
             
             transaction_updation = {
                 'update': instances_updated

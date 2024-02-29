@@ -64,6 +64,7 @@ class Objects:
                         'cellDataType': Parameters.type_data[index],
                         "headerTooltip": column,
                         "headerCheckboxSelection": index == 0,
+                        'rowDrag': index == 0,
                         'sortable': (column not in Parameters.columns_unsortable),
                         'filter': (column not in Parameters.columns_nonfilter),
                         "filterParams": {"buttons": ["cancel","clear","apply","reset",], "closeOnApply": True,},
@@ -87,7 +88,6 @@ class Objects:
                     "enterNavigatesVerticallyAfterEdit": True,
                     "undoRedoCellEditing": True,
                     "undoRedoCellEditingLimit": 23,
-                    "stopEditingWhenCellsLoseFocus": True,
                 },
                 getRowId="params.data.id",
                 columnSize="sizeToFit",
@@ -100,13 +100,10 @@ class Objects:
                 columnDefs=[
                     {
                         'field': column,
-                        'cellDataType': Parameters.type_data[index],
-                        "headerTooltip": column,
-                        "headerCheckboxSelection": index == 0,
                         'sortable': (column not in Parameters.columns_unsortable),
+                        'rowDrag': index == 0,
                         'filter': (column not in Parameters.columns_nonfilter),
                         "filterParams": {"buttons": ["cancel","clear","apply","reset",], "closeOnApply": True,},
-                        "editable": (column not in Parameters.columns_uneditable),
                         "type": "rightAligned",
                     }
                     for index, column in enumerate(relation.table.columns.keys())
@@ -124,9 +121,6 @@ class Objects:
                     "suppressMoveWhenRowDragging": True,
                     "enterNavigatesVertically": True,
                     "enterNavigatesVerticallyAfterEdit": True,
-                    "undoRedoCellEditing": True,
-                    "undoRedoCellEditingLimit": 23,
-                    "stopEditingWhenCellsLoseFocus": True,
                 },
                 getRowId="params.data.id",
                 columnSize="sizeToFit",
@@ -139,13 +133,10 @@ class Objects:
                 columnDefs=[
                     {
                         'field': column,
-                        'cellDataType': Parameters.type_data[index],
-                        "headerTooltip": column,
-                        "headerCheckboxSelection": index == 0,
                         'sortable': (column not in Parameters.columns_unsortable),
+                        'rowDrag': index == 0,
                         'filter': (column not in Parameters.columns_nonfilter),
                         "filterParams": {"buttons": ["cancel","clear","apply","reset",], "closeOnApply": True,},
-                        "editable": (column not in Parameters.columns_uneditable),
                         "type": "rightAligned",
                     }
                     for index, column in enumerate(relation.table.columns.keys())
@@ -163,9 +154,6 @@ class Objects:
                     "suppressMoveWhenRowDragging": True,
                     "enterNavigatesVertically": True,
                     "enterNavigatesVerticallyAfterEdit": True,
-                    "undoRedoCellEditing": True,
-                    "undoRedoCellEditingLimit": 23,
-                    "stopEditingWhenCellsLoseFocus": True,
                 },
                 getRowId="params.data.id",
                 columnSize="sizeToFit",
@@ -178,13 +166,10 @@ class Objects:
                 columnDefs=[
                     {
                         'field': column,
-                        'cellDataType': Parameters.type_data[index],
-                        "headerTooltip": column,
-                        "headerCheckboxSelection": index == 0,
                         'sortable': (column not in Parameters.columns_unsortable),
+                        'rowDrag': index == 0,
                         'filter': (column not in Parameters.columns_nonfilter),
                         "filterParams": {"buttons": ["cancel","clear","apply","reset",], "closeOnApply": True,},
-                        "editable": (column not in Parameters.columns_uneditable),
                         "type": "rightAligned",
                     }
                     for index, column in enumerate(relation.table.columns.keys())
@@ -202,9 +187,6 @@ class Objects:
                     "suppressMoveWhenRowDragging": True,
                     "enterNavigatesVertically": True,
                     "enterNavigatesVerticallyAfterEdit": True,
-                    "undoRedoCellEditing": True,
-                    "undoRedoCellEditingLimit": 23,
-                    "stopEditingWhenCellsLoseFocus": True,
                 },
                 getRowId="params.data.id",
                 columnSize="sizeToFit",
