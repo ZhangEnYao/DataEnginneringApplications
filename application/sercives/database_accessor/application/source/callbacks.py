@@ -1,8 +1,9 @@
 from dash import dcc as dash_core_componets, html as dash_html, Input, Output, State, Patch, ctx as context, no_update, clientside_callback
 import pandas
 from .utensils import FileParser
-from .objects import IDs, Objects
+from .objects import ids, objects, relation
 from copy import deepcopy
+from ..models import DataManipulator
 
 class Callbacks:
 
@@ -10,16 +11,16 @@ class Callbacks:
     def register(server):
 
         @server.callback(
-            Output(IDs.object_relation, "columnState"),
-            Output(IDs.object_relation, "resetColumnState"),
-            Output(IDs.object_relation, "columnSize"),
-            Output(IDs.object_relation, "columnSizeOptions"),
-            State(IDs.object_relation, "columnState"),
-            Input(IDs.listener_resetOrdering, "n_clicks"),
+            Output(ids.elements.relation, "columnState"),
+            Output(ids.elements.relation, "resetColumnState"),
+            Output(ids.elements.relation, "columnSize"),
+            Output(ids.elements.relation, "columnSizeOptions"),
+            State(ids.elements.relation, "columnState"),
+            Input(ids.listeners.reset_ordering, "n_clicks"),
             prevent_initial_call=True,
         )
         def reset_ordering(column_states, *_):
-            if context.triggered_id == IDs.listener_resetOrdering:
+            if context.triggered_id == ids.listeners.reset_ordering:
                 for state in column_states:
                     state['sort'] = None
             return (
@@ -30,9 +31,9 @@ class Callbacks:
             )
 
         @server.callback(
-            Output(IDs.object_relation, "dashGridOptions"),
-            Output(IDs.object_processingRelation, "dashGridOptions"),
-            Input(IDs.listener_quickFilter, "value"),
+            Output(ids.elements.relation, "dashGridOptions"),
+            Output(ids.elements.logs_deletion, "dashGridOptions"),
+            Input(ids.listeners.quick_filter, "value"),
             prevent_initial_call=True,
         )
         def quick_filter(filter_text):
@@ -44,15 +45,17 @@ class Callbacks:
             )
 
         @server.callback(
-            Output(IDs.object_relation, "rowTransaction"),
-            Output(IDs.object_relation, "selectedRows"),
-            Output(IDs.container_uploadFileFunctionality, "children"),
-            Input(IDs.listener_createInstance, "n_clicks"),
-            State(IDs.object_relation, "selectedRows"),
-            State(IDs.object_relation, "columnDefs"),
-            State(IDs.object_relation, "rowData"),
-            State(IDs.functionality_uploadFile, "contents"),
-            State(IDs.functionality_uploadFile, "filename"),
+            Output(ids.elements.relation, "rowTransaction"), # Synchronize.
+            Output(ids.elements.logs_creation, "rowTransaction"),
+            Output(ids.elements.relation, "selectedRows"), # Refresh.
+            Output(ids.functionalities.container_upload_file, "children"),
+            Input(ids.listeners.instance_create, "n_clicks"),
+            State(ids.elements.relation, "selectedRows"), # For create or duplicate.
+            State(ids.elements.relation, "columnDefs"),
+            State(ids.elements.relation, "rowData"),
+            State(ids.elements.logs_deletion, "rowData"),
+            State(ids.functionalities.upload_file, "contents"), # For upload.
+            State(ids.functionalities.upload_file, "filename"),
             prevent_initial_call=True,
         )
         def create_instance(
@@ -60,11 +63,12 @@ class Callbacks:
             selected_instances,
             column_definations,
             instances_relation,
+            instances_deleted,
             contents,
             filename,
         ):
             
-            ids = [instance['id'] for instance in instances_relation]
+            ids = [instance['id'] for instance in (instances_relation + instances_deleted)]
             maximum_id = max(ids) if ids else 0
 
             if selected_instances:
@@ -101,20 +105,71 @@ class Callbacks:
                 "add": instances,
             }
             selected_rows = []
-            upload_container_children = Objects.functionality_uploadFile
+            upload_container_children = objects.functionalities.upload_file
 
             return (
+                transaction,
                 transaction,
                 selected_rows,
                 upload_container_children,
             )
 
         @server.callback(
-            Output(IDs.object_relation, "rowTransaction"),
-            Output(IDs.object_processingRelation, "rowTransaction"),
-            Output(IDs.object_relation, "selectedRows"),
-            Input(IDs.listener_deleteInstance, "n_clicks"),
-            State(IDs.object_relation, "selectedRows"),
+            Output(ids.elements.relation, "rowTransaction"),
+            Output(ids.elements.logs_creation, "rowTransaction"),
+            Output(ids.elements.logs_updation, "rowTransaction"),
+            Output(ids.elements.relation, "selectedRows"),
+            Input(ids.elements.relation, "cellValueChanged"),
+            State(ids.elements.relation, "selectedRows"),
+            State(ids.elements.logs_updation, "rowData"),
+        )
+        def update_instance(
+            changed_cell,
+            instances_selected,
+            logs_updated_instances,
+        ):
+            changed_cell = changed_cell.pop()
+
+            # Coordinate of changed cell and changed value.
+            changed_column = changed_cell['colId']
+            id_changed_instance = changed_cell['rowId']
+            value = changed_cell['value']
+
+            # Updated instances
+            instances_updated = deepcopy(instances_selected)
+            for instance in instances_updated:
+                instance[changed_column] = value
+            
+            
+            ids_updated_instances = [instance['id'] for instance in logs_updated_instances]
+            newest_updated_instances = [instance for instance in instances_updated if instance['id'] not in ids_updated_instances]
+
+            print(instances_updated)
+            print(ids_updated_instances)
+            
+            transaction_updation = {
+                'update': instances_updated
+            }
+
+            transaction_upserion = {
+                "addIndex": 0, 
+                "add": newest_updated_instances,
+                'update': instances_updated
+            }
+
+            return (
+                transaction_updation,
+                transaction_updation,
+                transaction_upserion,
+                [],
+            )
+        
+        @server.callback(
+            Output(ids.elements.relation, "rowTransaction"),
+            Output(ids.elements.logs_deletion, "rowTransaction"),
+            Output(ids.elements.relation, "selectedRows"),
+            Input(ids.listeners.instance_delete, "n_clicks"),
+            State(ids.elements.relation, "selectedRows"),
             prevent_initial_call=True,
         )
         def delete_instance(
@@ -138,33 +193,53 @@ class Callbacks:
             )
         
         @server.callback(
-            Output(IDs.object_relation, "rowTransaction"),
-            Output(IDs.object_relation, "selectedRows"),
-            Input(IDs.object_relation, "cellValueChanged"),
-            State(IDs.object_relation, "selectedRows"),
-        )
-        def update_instance(
-            changed_cell,
-            selected_instances,
-        ):
-            changed_cell = changed_cell.pop()
-            changed_column = changed_cell['colId']
-            
-            value = changed_cell['value']
-
-            for instance in selected_instances:
-                instance[changed_column] = value
-
-            transaction = {
-                'update': selected_instances
-            }
-
-            return transaction, []
-        
-        @server.callback(
-            Output(IDs.functionality_uploadFile, 'children'),
-            Input(IDs.functionality_uploadFile, 'contents'),
-            State(IDs.functionality_uploadFile, 'filename')
+            Output(ids.functionalities.upload_file, 'children'),
+            Input(ids.functionalities.upload_file, 'contents'),
+            State(ids.functionalities.upload_file, 'filename')
         )
         def log_uploaded_files(list_of_contents, filename):
             return dash_html.Div(filename)
+        
+        @server.callback(
+            Output(ids.elements.logs_creation, "rowData"),
+            Output(ids.elements.logs_updation, "rowData"),
+            Output(ids.elements.logs_deletion, "rowData"),
+            Input(ids.listeners.save, "n_clicks"),
+            State(ids.elements.relation, "rowData"),
+            State(ids.elements.logs_creation, "rowData"),
+            State(ids.elements.logs_deletion, "rowData"),
+        )
+        def save(
+            n_clicks,
+            instance_updated,
+            instance_created,
+            instance_deleted,
+        ):
+            if instance_created:
+                DataManipulator.create(
+                    engine=relation.connection.engine,
+                    data=pandas.DataFrame(instance_created),
+                    schema=relation.configuration.relation.schema,
+                    relation=relation.configuration.relation.table,
+                )
+            if instance_updated:
+                DataManipulator.create(
+                    engine=relation.connection.engine,
+                    data=pandas.DataFrame(instance_updated),
+                    schema=relation.configuration.relation.schema,
+                    relation=relation.configuration.relation.table,
+                )
+            if instance_deleted:
+                DataManipulator.delete(
+                    engine=relation.connection.engine,
+                    data=pandas.DataFrame(instance_deleted),
+                    schema=relation.configuration.relation.schema,
+                    relation=relation.configuration.relation.table,
+                )
+            relation.reload()
+            empty = pandas.DataFrame(columns=relation.instances.keys()).to_dict('records')
+            return (
+                empty,
+                empty,
+                empty,
+            )

@@ -1,1 +1,0 @@
-from .dash_registor import register_dash_service

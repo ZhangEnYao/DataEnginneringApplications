@@ -1,8 +1,6 @@
 from dash import dcc as dash_core_componets, html as dash_html, Input, Output, State, Patch, ctx as context, no_update, ClientsideFunction, clientside_callback, callback
 from dash_extensions.enrich import MultiplexerTransform, DashProxy as Dash
 import dash_bootstrap_components
-from .models import Relation
-from .configurations import configuration
 from application.sercives.database_accessor import UNIFORM_RESOURCE_LOCATOR_BASE_PATHNAME
 
 
@@ -23,7 +21,7 @@ def register_dash_service(
         prevent_initial_callbacks=True,
     )
     with server.app_context() as context:
-        from .source.view import Layout
+        from .source.layout import Layout
         layour = Layout()
         layour.register(service_database_accessor)
 

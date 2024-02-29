@@ -41,4 +41,5 @@ class Relation:
         return data
     
     def reload(self):
-        return self.load()
+        self._instance = self.load()
+        return self._instance
