@@ -4,6 +4,7 @@ import dash_bootstrap_components
 import pandas
 from application.sercives.database_accessor.application.configurations import configuration, Parameters
 from ..models import Relation
+from functools import reduce
 
 relation = Relation(
     configuration=configuration
@@ -35,10 +36,75 @@ class IDs:
             instance_update = 'listener_updateInstance'
             save = 'listener_save'
         return Listeners()
+    
+ids = IDs()
 
-
+class AGGridConfigure:
+    @property
+    def column_definitions(self):
+        class ColumnDefinitions:
+            column = [{
+                'field': column,
+                'cellDataType': Parameters.type_data[index],
+            } for index, column in enumerate(relation.table.columns.keys())]
+            selections = [{
+                "headerCheckboxSelection": index == 0,
+            } for index, column in enumerate(relation.table.columns.keys())]
+            row_dragging = [{
+                'rowDrag': index == 0,
+            } for index, column in enumerate(relation.table.columns.keys())]
+            sorting = [{
+                'sortable': (column not in Parameters.columns_unsortable),
+            } for index, column in enumerate(relation.table.columns.keys())]
+            filtering = [{
+                'filter': (column not in Parameters.columns_nonfilter),
+                "filterParams": {"buttons": ["cancel", "clear", "apply", "reset",], "closeOnApply": True,},
+            } for index, column in enumerate(relation.table.columns.keys())]
+            editing = [{
+                "editable": (column not in Parameters.columns_uneditable),
+            } for index, column in enumerate(relation.table.columns.keys())]
+            tooltip = [{
+                "headerTooltip": column,
+            } for index, column in enumerate(relation.table.columns.keys())]
+            styles = [{
+                "type": "rightAligned",
+            } for index, column in enumerate(relation.table.columns.keys())]
+            @property
+            def defaults(self):
+                class Defaults:
+                    styles = {
+                        "wrapHeaderText": True,
+                        "autoHeaderHeight": True,
+                    }
+                return Defaults()
+        return ColumnDefinitions()
+    @property
+    def options(self):
+        class Options:
+            selection = {
+                "rowSelection": "multiple",
+            }
+            row_dragging = {
+                "rowDragManaged": True,
+                "rowDragMultiRow": True,
+                "rowDragEntireRow": True,
+                "suppressMoveWhenRowDragging": True,
+            }
+            sorting = {
+                'alwaysMultiSort': True,
+            }
+            filtering = None
+            editing = {
+                "undoRedoCellEditing": True,
+                "undoRedoCellEditingLimit": 23,
+            }
+            navigation = {
+                "enterNavigatesVertically": True,
+                "enterNavigatesVerticallyAfterEdit": True,
+            }
+        return Options()
+ag_grid_configure = AGGridConfigure()
 class Objects:
-
     @property
     def navigation_bar(self):
         navigation_bar = dash_bootstrap_components.NavbarSimple(
@@ -53,7 +119,6 @@ class Objects:
             color="light",
         )
         return navigation_bar
-    
     @property
     def elements(self):
         class Elements:
@@ -61,23 +126,23 @@ class Objects:
                 id=ids.elements.operating_relation,
                 rowData=relation.instances.to_dict("records"),
                 columnDefs=[
-                    {
-                        'field': column,
-                        'cellDataType': Parameters.type_data[index],
-                        "headerTooltip": column,
-                        "headerCheckboxSelection": index == 0,
-                        'rowDrag': index == 0,
-                        'sortable': (column not in Parameters.columns_unsortable),
-                        'filter': (column not in Parameters.columns_nonfilter),
-                        "filterParams": {"buttons": ["cancel", "clear", "apply", "reset",], "closeOnApply": True,},
-                        "editable": (column not in Parameters.columns_uneditable),
-                        "type": "rightAligned",
-                    }
-                    for index, column in enumerate(relation.table.columns.keys())
+                    reduce(
+                        lambda one, another: {**one, **another},
+                        configurations
+                    )
+                    for configurations in zip(
+                        ag_grid_configure.column_definitions.column,
+                        ag_grid_configure.column_definitions.selections,
+                        ag_grid_configure.column_definitions.row_dragging,
+                        ag_grid_configure.column_definitions.sorting,
+                        ag_grid_configure.column_definitions.filtering,
+                        ag_grid_configure.column_definitions.editing,
+                        ag_grid_configure.column_definitions.tooltip,
+                        ag_grid_configure.column_definitions.styles,
+                    )
                 ],
                 defaultColDef={
-                    "wrapHeaderText": True,
-                    "autoHeaderHeight": True,
+                    **ag_grid_configure.column_definitions.defaults.styles
                 },
                 dashGridOptions={
                     'alwaysMultiSort': True,
@@ -96,106 +161,93 @@ class Objects:
                 className="ag-theme-material",
                 persistence=True,
             )
-
             logs_creation = dash_ag_grid.AgGrid(
                 id=ids.elements.logs_creation,
                 rowData=pandas.DataFrame(columns=relation.instances.keys()).to_dict('records'),
                 columnDefs=[
-                    {
-                        'field': column,
-                        'sortable': (column not in Parameters.columns_unsortable),
-                        'rowDrag': index == 0,
-                        'filter': (column not in Parameters.columns_nonfilter),
-                        "filterParams": {"buttons": ["cancel", "clear", "apply", "reset",], "closeOnApply": True,},
-                        "type": "rightAligned",
-                    }
-                    for index, column in enumerate(relation.table.columns.keys())
+                    reduce(
+                        lambda one, another: {**one, **another},
+                        configurations
+                    )
+                    for configurations in zip(
+                        ag_grid_configure.column_definitions.column,
+                        ag_grid_configure.column_definitions.row_dragging,
+                        ag_grid_configure.column_definitions.sorting,
+                        ag_grid_configure.column_definitions.filtering,
+                        ag_grid_configure.column_definitions.styles,
+                    )
                 ],
                 defaultColDef={
-                    "wrapHeaderText": True,
-                    "autoHeaderHeight": True,
+                    **ag_grid_configure.column_definitions.defaults.styles
                 },
                 dashGridOptions={
-                    'alwaysMultiSort': True,
-                    "rowSelection": "multiple",
-                    "rowDragManaged": True,
-                    "rowDragMultiRow": True,
-                    "rowDragEntireRow": True,
-                    "suppressMoveWhenRowDragging": True,
-                    "enterNavigatesVertically": True,
-                    "enterNavigatesVerticallyAfterEdit": True,
+                    **ag_grid_configure.options.sorting,
+                    **ag_grid_configure.options.selection,
+                    **ag_grid_configure.options.row_dragging,
+                    **ag_grid_configure.options.navigation,
                 },
                 getRowId="params.data.id",
                 columnSize="responsiveSizeToFit",
                 className="ag-theme-material",
             )
-
             logs_updation = dash_ag_grid.AgGrid(
                 id=ids.elements.logs_updation,
                 rowData=pandas.DataFrame(columns=relation.instances.keys()).to_dict('records'),
                 columnDefs=[
-                    {
-                        'field': column,
-                        'sortable': (column not in Parameters.columns_unsortable),
-                        'rowDrag': index == 0,
-                        'filter': (column not in Parameters.columns_nonfilter),
-                        "filterParams": {"buttons": ["cancel","clear","apply","reset",], "closeOnApply": True,},
-                        "type": "rightAligned",
-                    }
-                    for index, column in enumerate(relation.table.columns.keys())
+                    reduce(
+                        lambda one, another: {**one, **another},
+                        configurations
+                    )
+                    for configurations in zip(
+                        ag_grid_configure.column_definitions.column,
+                        ag_grid_configure.column_definitions.row_dragging,
+                        ag_grid_configure.column_definitions.sorting,
+                        ag_grid_configure.column_definitions.filtering,
+                        ag_grid_configure.column_definitions.styles,
+                    )
                 ],
                 defaultColDef={
-                    "wrapHeaderText": True,
-                    "autoHeaderHeight": True,
+                    **ag_grid_configure.column_definitions.defaults.styles
                 },
                 dashGridOptions={
-                    'alwaysMultiSort': True,
-                    "rowSelection": "multiple",
-                    "rowDragManaged": True,
-                    "rowDragMultiRow": True,
-                    "rowDragEntireRow": True,
-                    "suppressMoveWhenRowDragging": True,
-                    "enterNavigatesVertically": True,
-                    "enterNavigatesVerticallyAfterEdit": True,
+                    **ag_grid_configure.options.sorting,
+                    **ag_grid_configure.options.selection,
+                    **ag_grid_configure.options.row_dragging,
+                    **ag_grid_configure.options.navigation,
                 },
                 getRowId="params.data.id",
                 columnSize="responsiveSizeToFit",
                 className="ag-theme-material",
             )
-
             logs_deletion = dash_ag_grid.AgGrid(
                 id=ids.elements.logs_deletion,
                 rowData=pandas.DataFrame(columns=relation.instances.keys()).to_dict('records'),
                 columnDefs=[
-                    {
-                        'field': column,
-                        'sortable': (column not in Parameters.columns_unsortable),
-                        'rowDrag': index == 0,
-                        'filter': (column not in Parameters.columns_nonfilter),
-                        "filterParams": {"buttons": ["cancel","clear","apply","reset",], "closeOnApply": True,},
-                        "type": "rightAligned",
-                    }
-                    for index, column in enumerate(relation.table.columns.keys())
+                    reduce(
+                        lambda one, another: {**one, **another},
+                        configurations
+                    )
+                    for configurations in zip(
+                        ag_grid_configure.column_definitions.column,
+                        ag_grid_configure.column_definitions.row_dragging,
+                        ag_grid_configure.column_definitions.sorting,
+                        ag_grid_configure.column_definitions.filtering,
+                        ag_grid_configure.column_definitions.styles,
+                    )
                 ],
                 defaultColDef={
-                    "wrapHeaderText": True,
-                    "autoHeaderHeight": True,
+                    **ag_grid_configure.column_definitions.defaults.styles
                 },
                 dashGridOptions={
-                    'alwaysMultiSort': True,
-                    "rowSelection": "multiple",
-                    "rowDragManaged": True,
-                    "rowDragMultiRow": True,
-                    "rowDragEntireRow": True,
-                    "suppressMoveWhenRowDragging": True,
-                    "enterNavigatesVertically": True,
-                    "enterNavigatesVerticallyAfterEdit": True,
+                    **ag_grid_configure.options.sorting,
+                    **ag_grid_configure.options.selection,
+                    **ag_grid_configure.options.row_dragging,
+                    **ag_grid_configure.options.navigation,
                 },
                 getRowId="params.data.id",
                 columnSize="responsiveSizeToFit",
                 className="ag-theme-material",
             )
-
         return Elements()
 
     @property
@@ -207,14 +259,12 @@ class Objects:
                 color="secondary",
                 size="sm",
             )
-
             clear_filtering=dash_bootstrap_components.Button(
                 id=ids.listeners.clear_filtering,
                 children="Clear Filtering",
                 color="secondary",
                 size="sm",
             )
-
             quick_filter = dash_bootstrap_components.Col(
                 dash_html.Div(
                     dash_bootstrap_components.Input(
@@ -223,7 +273,6 @@ class Objects:
                     ),
                 ),
             )
-
             upload_file = dash_core_componets.Upload(
                 id=ids.functionalities.upload_file,
                 children=dash_html.Div(
@@ -239,7 +288,6 @@ class Objects:
                     'textAlign': 'center',
                 },
             )
-
             create_instance = dash_bootstrap_components.Button(
                 id=ids.listeners.instance_create,
                 children='Create',
@@ -247,7 +295,6 @@ class Objects:
                 color="secondary",
                 size="sm",
             )
-
             delete_instance = dash_bootstrap_components.Button(
                 id=ids.listeners.instance_delete,
                 children='Delete',
@@ -255,7 +302,6 @@ class Objects:
                 color="secondary",
                 size="sm",
             )
-
             save = dash_bootstrap_components.Button(
                 id=ids.listeners.save,
                 children='Save',
@@ -263,8 +309,5 @@ class Objects:
                 color="secondary",
                 size="sm",
             )
-
         return Functionalities()
-
-ids = IDs()
 objects = Objects()
