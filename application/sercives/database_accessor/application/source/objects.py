@@ -13,50 +13,52 @@ class IDs:
     @property
     def elements(self):
         class Elements:
-            relation = 'object_relation'
-            logs_creation = 'object_logsCreation'
-            logs_updation = 'object_logsUpdation'
-            logs_deletion = 'object_logsDeletion'
+            operating_relation = 'elements_operatingRelation'
+            logs_creation = 'elements_logsCreation'
+            logs_updation = 'elements_logsUpdation'
+            logs_deletion = 'elements_logsDeletion'
         return Elements()
     @property
     def functionalities(self):
         class Functionalities:
-            upload_file = 'functionality_uploadFile'
-            container_upload_file = 'container_uploadFileFunctionality'
+            quick_filter = 'listener_quickFilter'
+            upload_file = 'functionalities_uploadFile'
+            container_upload_file = 'container_uploadFileFunctionalities'
         return Functionalities()
     @property
     def listeners(self):
         class Listeners:
-            reset_ordering = 'listener_clearSorting'
-            quick_filter = 'listener_quickFilter'
+            clear_sorting = 'listener_clearSorting'
+            clear_filtering = 'listener_clearFiltering'
             instance_create = 'listener_createInstance'
             instance_delete = 'listener_deleteInstance'
             instance_update = 'listener_updateInstance'
             save = 'listener_save'
-
         return Listeners()
 
+
 class Objects:
+
     @property
     def navigation_bar(self):
         navigation_bar = dash_bootstrap_components.NavbarSimple(
             children=[
                 dash_bootstrap_components.NavItem(
                     dash_bootstrap_components.NavLink("Logout", href="/authority/logout", external_link=True)
-                ),
-            ],
+            ),],
             brand="Application Center",
             brand_href='/',
             brand_external_link=True,
             fluid = True,
-            color="dark",
+            color="light",
         )
         return navigation_bar
+    
     @property
     def elements(self):
         class Elements:
             operating_relation = dash_ag_grid.AgGrid(
-                id=ids.elements.relation,
+                id=ids.elements.operating_relation,
                 rowData=relation.instances.to_dict("records"),
                 columnDefs=[
                     {
@@ -67,7 +69,7 @@ class Objects:
                         'rowDrag': index == 0,
                         'sortable': (column not in Parameters.columns_unsortable),
                         'filter': (column not in Parameters.columns_nonfilter),
-                        "filterParams": {"buttons": ["cancel","clear","apply","reset",], "closeOnApply": True,},
+                        "filterParams": {"buttons": ["cancel", "clear", "apply", "reset",], "closeOnApply": True,},
                         "editable": (column not in Parameters.columns_uneditable),
                         "type": "rightAligned",
                     }
@@ -90,8 +92,9 @@ class Objects:
                     "undoRedoCellEditingLimit": 23,
                 },
                 getRowId="params.data.id",
-                columnSize="sizeToFit",
-                className="ag-theme-quartz-auto-dark",
+                columnSize="responsiveSizeToFit",
+                className="ag-theme-material",
+                persistence=True,
             )
 
             logs_creation = dash_ag_grid.AgGrid(
@@ -103,7 +106,7 @@ class Objects:
                         'sortable': (column not in Parameters.columns_unsortable),
                         'rowDrag': index == 0,
                         'filter': (column not in Parameters.columns_nonfilter),
-                        "filterParams": {"buttons": ["cancel","clear","apply","reset",], "closeOnApply": True,},
+                        "filterParams": {"buttons": ["cancel", "clear", "apply", "reset",], "closeOnApply": True,},
                         "type": "rightAligned",
                     }
                     for index, column in enumerate(relation.table.columns.keys())
@@ -123,8 +126,8 @@ class Objects:
                     "enterNavigatesVerticallyAfterEdit": True,
                 },
                 getRowId="params.data.id",
-                columnSize="sizeToFit",
-                className="ag-theme-balham-auto-dark",
+                columnSize="responsiveSizeToFit",
+                className="ag-theme-material",
             )
 
             logs_updation = dash_ag_grid.AgGrid(
@@ -156,8 +159,8 @@ class Objects:
                     "enterNavigatesVerticallyAfterEdit": True,
                 },
                 getRowId="params.data.id",
-                columnSize="sizeToFit",
-                className="ag-theme-balham-auto-dark",
+                columnSize="responsiveSizeToFit",
+                className="ag-theme-material",
             )
 
             logs_deletion = dash_ag_grid.AgGrid(
@@ -189,24 +192,33 @@ class Objects:
                     "enterNavigatesVerticallyAfterEdit": True,
                 },
                 getRowId="params.data.id",
-                columnSize="sizeToFit",
-                className="ag-theme-balham-auto-dark",
+                columnSize="responsiveSizeToFit",
+                className="ag-theme-material",
             )
+
         return Elements()
 
     @property
     def functionalities(self):
         class Functionalities:
-            reset_ordering=dash_bootstrap_components.Button(
-                id=ids.listeners.reset_ordering,
-                children="Reset Ordering",
+            clear_sorting=dash_bootstrap_components.Button(
+                id=ids.listeners.clear_sorting,
+                children="Clear Ordering",
                 color="secondary",
+                size="sm",
+            )
+
+            clear_filtering=dash_bootstrap_components.Button(
+                id=ids.listeners.clear_filtering,
+                children="Clear Filtering",
+                color="secondary",
+                size="sm",
             )
 
             quick_filter = dash_bootstrap_components.Col(
                 dash_html.Div(
                     dash_bootstrap_components.Input(
-                        id=ids.listeners.quick_filter,
+                        id=ids.functionalities.quick_filter,
                         placeholder="Quick Filter",
                     ),
                 ),
@@ -222,8 +234,8 @@ class Objects:
                     'borderStyle': 'dashed',
                     'borderWidth': '1.3px',
                     'borderRadius': '2.3px',
-                    'borderColor': 'rgb(255, 255, 255)',
-                    'backgroundColor': 'rgba(255, 255, 255, 0.618)',
+                    'borderColor': 'rgb(127, 127, 127)',
+                    'backgroundColor': 'rgba(127, 127, 127, 0.23)',
                     'textAlign': 'center',
                 },
             )
@@ -233,6 +245,7 @@ class Objects:
                 children='Create',
                 n_clicks=0,
                 color="secondary",
+                size="sm",
             )
 
             delete_instance = dash_bootstrap_components.Button(
@@ -240,6 +253,7 @@ class Objects:
                 children='Delete',
                 n_clicks=0,
                 color="secondary",
+                size="sm",
             )
 
             save = dash_bootstrap_components.Button(
@@ -247,6 +261,7 @@ class Objects:
                 children='Save',
                 n_clicks=0,
                 color="secondary",
+                size="sm",
             )
 
         return Functionalities()

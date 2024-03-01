@@ -13,7 +13,7 @@ def register_dash_service(
         server=server,
         url_base_pathname=UNIFORM_RESOURCE_LOCATOR_BASE_PATHNAME,
         external_stylesheets=[
-            dash_bootstrap_components.themes.DARKLY,
+            dash_bootstrap_components.themes.MATERIA,
         ],
         transforms=[
             MultiplexerTransform()

@@ -4,6 +4,7 @@ from .utensils import FileParser
 from .objects import ids, objects, relation
 from copy import deepcopy
 from ..models import DataManipulator
+from dash_extensions import Keyboard
 
 class Callbacks:
 
@@ -11,48 +12,67 @@ class Callbacks:
     def register(server):
 
         @server.callback(
-            Output(ids.elements.relation, "columnState"),
-            Output(ids.elements.relation, "resetColumnState"),
-            Output(ids.elements.relation, "columnSize"),
-            Output(ids.elements.relation, "columnSizeOptions"),
-            State(ids.elements.relation, "columnState"),
-            Input(ids.listeners.reset_ordering, "n_clicks"),
+            Output(ids.elements.operating_relation, "resetColumnState"),
+            # Output(ids.elements.operating_relation, "columnSize"),
+            # Output(ids.elements.operating_relation, "columnSizeOptions"),
+            Input(ids.listeners.clear_sorting, "n_clicks"),
+            State(ids.elements.operating_relation, "columnState"),
             prevent_initial_call=True,
         )
-        def reset_ordering(column_states, *_):
-            if context.triggered_id == ids.listeners.reset_ordering:
-                for state in column_states:
-                    state['sort'] = None
+        def clear_sorting(
+            n_clicks,
+            column_states,
+        ):
             return (
-                column_states,
-                True,
-                "autoSize",
-                {"skipHeader": False},
+                True
+                # "autoSize",
+                # {"skipHeader": False},
             )
 
         @server.callback(
-            Output(ids.elements.relation, "dashGridOptions"),
-            Output(ids.elements.logs_deletion, "dashGridOptions"),
-            Input(ids.listeners.quick_filter, "value"),
-            prevent_initial_call=True,
+            Output(ids.elements.operating_relation, "dashGridOptions"),
+            Output(ids.elements.operating_relation, "filterModel"),
+            Output(ids.functionalities.quick_filter, "value"),
+            Input(ids.listeners.clear_filtering, "n_clicks"),
+            State(ids.elements.operating_relation, "filterModel"),
         )
-        def quick_filter(filter_text):
-            updated_filter_text = Patch()
-            updated_filter_text['quickFilterText'] = filter_text
+        def clear_filtering(
+            n_clicks,
+            model,
+        ):
+            patch = Patch()
+            patch['quickFilterText'] = ''
+            value = ''
+            model = {}
             return (
-                updated_filter_text,
-                updated_filter_text,
+                patch,
+                model,
+                value,
             )
 
         @server.callback(
-            Output(ids.elements.relation, "rowTransaction"), # Synchronize.
+            Output(ids.elements.operating_relation, "dashGridOptions"),
+            Input(ids.functionalities.quick_filter, "value"),
+            prevent_initial_call=True,
+        )
+        def quick_filter(
+            filter_value,
+        ):
+            patch = Patch()
+            patch['quickFilterText'] = filter_value
+            return (
+                patch
+            )
+
+        @server.callback(
+            Output(ids.elements.operating_relation, "rowTransaction"), # Synchronize.
             Output(ids.elements.logs_creation, "rowTransaction"),
-            Output(ids.elements.relation, "selectedRows"), # Refresh.
+            Output(ids.elements.operating_relation, "selectedRows"), # Refresh.
             Output(ids.functionalities.container_upload_file, "children"),
             Input(ids.listeners.instance_create, "n_clicks"),
-            State(ids.elements.relation, "selectedRows"), # For create or duplicate.
-            State(ids.elements.relation, "columnDefs"),
-            State(ids.elements.relation, "rowData"),
+            State(ids.elements.operating_relation, "selectedRows"), # For create or duplicate.
+            State(ids.elements.operating_relation, "columnDefs"),
+            State(ids.elements.operating_relation, "rowData"),
             State(ids.elements.logs_deletion, "rowData"),
             State(ids.functionalities.upload_file, "contents"), # For upload.
             State(ids.functionalities.upload_file, "filename"),
@@ -75,30 +95,28 @@ class Callbacks:
 
                 instances = deepcopy(selected_instances)
                 
-                for index, instance in enumerate(instances):
-                    instance['id'] = (maximum_id + 1) + index
-                
+                for offset, instance in enumerate(instances, start=1):
+                    instance['id'] = maximum_id + offset
             else:
 
-                instances = [
-                    {
+                if contents:
+
+                    parser = FileParser(
+                        contents=contents,
+                        filename=filename,
+                    )
+                    instances = parser.execute()
+
+                    instances = instances.to_dict('records')
+
+                    for offset, instance in enumerate(instances, start=1):
+                        instance['id'] = maximum_id + offset
+                else:
+
+                    instances = [{
                         defination['field']: (maximum_id + 1 if defination['field'] == 'id' else None)
                         for defination in column_definations
-                    }
-                ]
-            
-            if contents:
-
-                parser = FileParser(
-                    contents=contents,
-                    filename=filename,
-                )
-                instances = parser.execute()
-
-                instances = instances.to_dict('records')
-
-                for index, instance in enumerate(instances):
-                    instance['id'] = (maximum_id + 1) + index
+                    }]
                 
             transaction = {
                 "addIndex": 0,
@@ -115,62 +133,69 @@ class Callbacks:
             )
 
         @server.callback(
-            Output(ids.elements.relation, "rowTransaction"),
+            Output(ids.elements.operating_relation, "rowTransaction"),
             Output(ids.elements.logs_creation, "rowTransaction"),
             Output(ids.elements.logs_updation, "rowTransaction"),
-            Output(ids.elements.relation, "selectedRows"),
-            Input(ids.elements.relation, "cellValueChanged"),
-            State(ids.elements.relation, "selectedRows"),
+            Output(ids.elements.operating_relation, "selectedRows"),
+            Input(ids.elements.operating_relation, "cellValueChanged"),
+            State(ids.elements.operating_relation, "selectedRows"),
             State(ids.elements.logs_updation, "rowData"),
+            State(ids.elements.logs_creation, "rowData"),
         )
         def update_instance(
             changed_cell,
             instances_selected,
             logs_updated_instances,
+            logs_created_instances,
         ):
             changed_cell = changed_cell.pop()
 
-            # Coordinate of changed cell and changed value.
-            changed_column = changed_cell['colId']
-            id_changed_instance = changed_cell['rowId']
-            value = changed_cell['value']
-
+            changed_cell_id = int(changed_cell['rowId'])
+            changed_cell_column = changed_cell['colId']
+            changed_cell_value = changed_cell['value']
+            # If changed cell is not selected, revised the selected informations.
             ids_selected_instances = [instance['id'] for instance in instances_selected]
-            if id_changed_instance not in ids_selected_instances:
-                ids_selected_instances = [id_changed_instance]
+            if changed_cell_id not in ids_selected_instances:
+                ids_selected_instances = [changed_cell_id]
                 instances_selected = [changed_cell['data']]
 
-            # Updated instances
-            instances_updated = deepcopy(instances_selected)
-            for instance in instances_updated:
-                instance[changed_column] = value
+            instances_updated = pandas.DataFrame(instances_selected)
+            instances_updated[changed_cell_column] = changed_cell_value
             
-            ids_updated_instances = [instance['id'] for instance in logs_updated_instances]
-            newest_updated_instances = [instance for instance in instances_updated if instance['id'] not in ids_updated_instances]
+            ids_logs_creation = set(int(instance['id']) for instance in logs_created_instances)
+            ids_logs_updation = set(int(instance['id']) for instance in logs_updated_instances)
+
+            updated_instances_from_logs_creation = instances_updated.query("id in @ids_logs_creation")
+            updated_instances_from_logs_updation = instances_updated.query("id not in @ids_logs_creation & id in @ids_logs_updation")
+            updated_instances_not_created_in_logs_updation = instances_updated.query("id not in @ids_logs_creation & id not in @ids_logs_updation")
             
-            transaction_updation = {
-                'update': instances_updated
+            transaction_update_relation = {
+                'update': instances_updated.to_dict('records')
+            }
+            
+            transaction_update_logs_creation = {
+                'update': updated_instances_from_logs_creation.to_dict('records')
             }
 
-            transaction_upserion = {
-                "addIndex": 0, 
-                "add": newest_updated_instances,
-                'update': instances_updated
+            transaction_upsert_logs_updation = {
+                "addIndex": 0,
+                "add": updated_instances_not_created_in_logs_updation.to_dict('records'),
+                'update': updated_instances_from_logs_updation.to_dict('records')
             }
 
             return (
-                transaction_updation,
-                transaction_updation,
-                transaction_upserion,
+                transaction_update_relation,
+                transaction_update_logs_creation,
+                transaction_upsert_logs_updation,
                 [],
             )
         
         @server.callback(
-            Output(ids.elements.relation, "rowTransaction"),
+            Output(ids.elements.operating_relation, "rowTransaction"),
             Output(ids.elements.logs_deletion, "rowTransaction"),
-            Output(ids.elements.relation, "selectedRows"),
+            Output(ids.elements.operating_relation, "selectedRows"),
             Input(ids.listeners.instance_delete, "n_clicks"),
-            State(ids.elements.relation, "selectedRows"),
+            State(ids.elements.operating_relation, "selectedRows"),
             prevent_initial_call=True,
         )
         def delete_instance(
@@ -182,14 +207,14 @@ class Callbacks:
                 "remove": selected_instances,
             }
 
-            transaction_addProcessingRelationDeletedInstances = {
+            transaction_addLogsDeletionInstances = {
                 "addIndex": 0,
                 "add": selected_instances,
             }
             
             return (
                 transaction_deleteRelationInstance,
-                transaction_addProcessingRelationDeletedInstances,
+                transaction_addLogsDeletionInstances,
                 [],
             )
         
@@ -206,7 +231,7 @@ class Callbacks:
             Output(ids.elements.logs_updation, "rowData"),
             Output(ids.elements.logs_deletion, "rowData"),
             Input(ids.listeners.save, "n_clicks"),
-            State(ids.elements.relation, "rowData"),
+            State(ids.elements.operating_relation, "rowData"),
             State(ids.elements.logs_creation, "rowData"),
             State(ids.elements.logs_deletion, "rowData"),
         )
@@ -217,21 +242,21 @@ class Callbacks:
             instance_deleted,
         ):
             if instance_created:
-                DataManipulator.create(
+                DataManipulator.write(
                     engine=relation.connection.engine,
                     data=pandas.DataFrame(instance_created),
                     schema=relation.configuration.relation.schema,
                     relation=relation.configuration.relation.table,
                 )
             if instance_updated:
-                DataManipulator.create(
+                DataManipulator.write(
                     engine=relation.connection.engine,
                     data=pandas.DataFrame(instance_updated),
                     schema=relation.configuration.relation.schema,
                     relation=relation.configuration.relation.table,
                 )
             if instance_deleted:
-                DataManipulator.delete(
+                DataManipulator.write(
                     engine=relation.connection.engine,
                     data=pandas.DataFrame(instance_deleted),
                     schema=relation.configuration.relation.schema,
