@@ -1,14 +1,20 @@
-from dash import dcc as dash_core_componets, html as dash_html
+from functools import reduce
+
 import dash_ag_grid
 import dash_bootstrap_components
 import pandas
-from application.sercives.database_accessor.application.configurations import configuration, Parameters
+from dash import dcc as dash_core_componets
+from dash import html as dash_html
+
+from application.sercives.database_accessor.application.configurations import (
+    Parameters, configuration)
+
 from ..models import Relation
-from functools import reduce
 
 relation = Relation(
     configuration=configuration
 )
+
 
 class IDs:
     @property
@@ -19,6 +25,7 @@ class IDs:
             logs_updation = 'elements_logsUpdation'
             logs_deletion = 'elements_logsDeletion'
         return Elements()
+
     @property
     def functionalities(self):
         class Functionalities:
@@ -26,6 +33,7 @@ class IDs:
             upload_file = 'functionalities_uploadFile'
             container_upload_file = 'container_uploadFileFunctionalities'
         return Functionalities()
+
     @property
     def listeners(self):
         class Listeners:
@@ -36,8 +44,10 @@ class IDs:
             instance_update = 'listener_updateInstance'
             save = 'listener_save'
         return Listeners()
-    
+
+
 ids = IDs()
+
 
 class AGGridConfigure:
     @property
@@ -58,7 +68,7 @@ class AGGridConfigure:
             } for index, column in enumerate(relation.table.columns.keys())]
             filtering = [{
                 'filter': (column not in Parameters.columns_nonfilter),
-                "filterParams": {"buttons": ["cancel", "clear", "apply", "reset",], "closeOnApply": True,},
+                "filterParams": {"buttons": ["cancel", "clear", "apply", "reset",], "closeOnApply": True, },
             } for index, column in enumerate(relation.table.columns.keys())]
             editing = [{
                 "editable": (column not in Parameters.columns_uneditable),
@@ -69,6 +79,7 @@ class AGGridConfigure:
             styles = [{
                 "type": "rightAligned",
             } for index, column in enumerate(relation.table.columns.keys())]
+
             @property
             def defaults(self):
                 class Defaults:
@@ -78,6 +89,7 @@ class AGGridConfigure:
                     }
                 return Defaults()
         return ColumnDefinitions()
+
     @property
     def options(self):
         class Options:
@@ -103,22 +115,28 @@ class AGGridConfigure:
                 "enterNavigatesVerticallyAfterEdit": True,
             }
         return Options()
+
+
 ag_grid_configure = AGGridConfigure()
+
+
 class Objects:
     @property
     def navigation_bar(self):
         navigation_bar = dash_bootstrap_components.NavbarSimple(
             children=[
                 dash_bootstrap_components.NavItem(
-                    dash_bootstrap_components.NavLink("Logout", href="/authority/logout", external_link=True)
-            ),],
+                    dash_bootstrap_components.NavLink(
+                        "Logout", href="/authority/logout", external_link=True)
+                ),],
             brand="Application Center",
             brand_href='/',
             brand_external_link=True,
-            fluid = True,
+            fluid=True,
             color="light",
         )
         return navigation_bar
+
     @property
     def elements(self):
         class Elements:
@@ -163,7 +181,8 @@ class Objects:
             )
             logs_creation = dash_ag_grid.AgGrid(
                 id=ids.elements.logs_creation,
-                rowData=pandas.DataFrame(columns=relation.instances.keys()).to_dict('records'),
+                rowData=pandas.DataFrame(
+                    columns=relation.instances.keys()).to_dict('records'),
                 columnDefs=[
                     reduce(
                         lambda one, another: {**one, **another},
@@ -192,7 +211,8 @@ class Objects:
             )
             logs_updation = dash_ag_grid.AgGrid(
                 id=ids.elements.logs_updation,
-                rowData=pandas.DataFrame(columns=relation.instances.keys()).to_dict('records'),
+                rowData=pandas.DataFrame(
+                    columns=relation.instances.keys()).to_dict('records'),
                 columnDefs=[
                     reduce(
                         lambda one, another: {**one, **another},
@@ -221,7 +241,8 @@ class Objects:
             )
             logs_deletion = dash_ag_grid.AgGrid(
                 id=ids.elements.logs_deletion,
-                rowData=pandas.DataFrame(columns=relation.instances.keys()).to_dict('records'),
+                rowData=pandas.DataFrame(
+                    columns=relation.instances.keys()).to_dict('records'),
                 columnDefs=[
                     reduce(
                         lambda one, another: {**one, **another},
@@ -253,13 +274,13 @@ class Objects:
     @property
     def functionalities(self):
         class Functionalities:
-            clear_sorting=dash_bootstrap_components.Button(
+            clear_sorting = dash_bootstrap_components.Button(
                 id=ids.listeners.clear_sorting,
                 children="Clear Ordering",
                 color="secondary",
                 size="sm",
             )
-            clear_filtering=dash_bootstrap_components.Button(
+            clear_filtering = dash_bootstrap_components.Button(
                 id=ids.listeners.clear_filtering,
                 children="Clear Filtering",
                 color="secondary",
@@ -310,4 +331,6 @@ class Objects:
                 size="sm",
             )
         return Functionalities()
+
+
 objects = Objects()

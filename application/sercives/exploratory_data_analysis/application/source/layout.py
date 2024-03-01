@@ -1,5 +1,6 @@
-from dash_bootstrap_components import NavbarSimple, NavItem, NavLink, Row, Container
-from dash.html import Div, H3
+from dash.html import H3, Div
+from dash_bootstrap_components import (Container, NavbarSimple, NavItem,
+                                       NavLink, Row)
 
 navigation_bar = NavbarSimple(
     children=[
@@ -10,7 +11,7 @@ navigation_bar = NavbarSimple(
     brand="Application Center",
     brand_href='/',
     brand_external_link=True,
-    fluid = True,
+    fluid=True,
     color="light",
 )
 

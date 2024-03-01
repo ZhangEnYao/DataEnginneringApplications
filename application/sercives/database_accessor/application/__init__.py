@@ -1,7 +1,15 @@
-from dash import dcc as dash_core_componets, html as dash_html, Input, Output, State, Patch, ctx as context, no_update, ClientsideFunction, clientside_callback, callback
-from dash_extensions.enrich import MultiplexerTransform, DashProxy as Dash
 import dash_bootstrap_components
-from application.sercives.database_accessor import UNIFORM_RESOURCE_LOCATOR_BASE_PATHNAME
+from dash import (ClientsideFunction, Input, Output, Patch, State, callback,
+                  clientside_callback)
+from dash import ctx as context
+from dash import dcc as dash_core_componets
+from dash import html as dash_html
+from dash import no_update
+from dash_extensions.enrich import DashProxy as Dash
+from dash_extensions.enrich import MultiplexerTransform
+
+from application.sercives.database_accessor import \
+    UNIFORM_RESOURCE_LOCATOR_BASE_PATHNAME
 
 
 def register_dash_service(

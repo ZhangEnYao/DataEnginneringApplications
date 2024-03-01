@@ -1,9 +1,10 @@
-from dash import html as dash_html, dcc as dash_core_componets
-from dash_extensions.enrich import Dash
 import dash_bootstrap_components
-from .objects import ids
-from .objects import objects
+from dash import html as dash_html
 from dash_extensions import EventListener
+from dash_extensions.enrich import Dash
+
+from .objects import ids, objects
+
 
 class Layout:
     def __init__(self):
@@ -65,7 +66,7 @@ class Layout:
                             dash_html.Div([
                                 objects.functionalities.upload_file,
                             ], id=ids.functionalities.container_upload_file
-                        ),),
+                            ),),
                     ],),
                     dash_bootstrap_components.Row([
                         dash_bootstrap_components.Col(
@@ -91,6 +92,6 @@ class Layout:
                 ],),
             ]),
         ],)
-    
+
     def register(self, server: Dash):
         server.layout = self.layout

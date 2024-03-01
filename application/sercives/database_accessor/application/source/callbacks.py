@@ -1,10 +1,13 @@
-from dash import dcc as dash_core_componets, html as dash_html, Input, Output, State, Patch, ctx as context, no_update, clientside_callback
-import pandas
-from .utensils import FileParser
-from .objects import ids, objects, relation
 from copy import deepcopy
+
+import pandas
+from dash import Input, Output, Patch, State
+from dash import html as dash_html
+
 from ..models import DataManipulator
-from dash_extensions import Keyboard
+from .objects import ids, objects, relation
+from .utensils import FileParser
+
 
 class Callbacks:
 
@@ -65,16 +68,19 @@ class Callbacks:
             )
 
         @server.callback(
-            Output(ids.elements.operating_relation, "rowTransaction"), # Synchronize.
+            # Synchronize.
+            Output(ids.elements.operating_relation, "rowTransaction"),
             Output(ids.elements.logs_creation, "rowTransaction"),
-            Output(ids.elements.operating_relation, "selectedRows"), # Refresh.
+            # Refresh.
+            Output(ids.elements.operating_relation, "selectedRows"),
             Output(ids.functionalities.container_upload_file, "children"),
             Input(ids.listeners.instance_create, "n_clicks"),
-            State(ids.elements.operating_relation, "selectedRows"), # For create or duplicate.
+            # For create or duplicate.
+            State(ids.elements.operating_relation, "selectedRows"),
             State(ids.elements.operating_relation, "columnDefs"),
             State(ids.elements.operating_relation, "rowData"),
             State(ids.elements.logs_deletion, "rowData"),
-            State(ids.functionalities.upload_file, "contents"), # For upload.
+            State(ids.functionalities.upload_file, "contents"),  # For upload.
             State(ids.functionalities.upload_file, "filename"),
             prevent_initial_call=True,
         )
@@ -87,14 +93,15 @@ class Callbacks:
             contents,
             filename,
         ):
-            
-            ids = [instance['id'] for instance in (instances_relation + instances_deleted)]
+
+            ids = [instance['id']
+                   for instance in (instances_relation + instances_deleted)]
             maximum_id = max(ids) if ids else 0
 
             if selected_instances:
 
                 instances = deepcopy(selected_instances)
-                
+
                 for offset, instance in enumerate(instances, start=1):
                     instance['id'] = maximum_id + offset
             else:
@@ -114,10 +121,11 @@ class Callbacks:
                 else:
 
                     instances = [{
-                        defination['field']: (maximum_id + 1 if defination['field'] == 'id' else None)
+                        defination['field']: (
+                            maximum_id + 1 if defination['field'] == 'id' else None)
                         for defination in column_definations
                     }]
-                
+
             transaction = {
                 "addIndex": 0,
                 "add": instances,
@@ -154,25 +162,31 @@ class Callbacks:
             changed_cell_column = changed_cell['colId']
             changed_cell_value = changed_cell['value']
             # If changed cell is not selected, revised the selected informations.
-            ids_selected_instances = [instance['id'] for instance in instances_selected]
+            ids_selected_instances = [instance['id']
+                                      for instance in instances_selected]
             if changed_cell_id not in ids_selected_instances:
                 ids_selected_instances = [changed_cell_id]
                 instances_selected = [changed_cell['data']]
 
             instances_updated = pandas.DataFrame(instances_selected)
             instances_updated[changed_cell_column] = changed_cell_value
-            
-            ids_logs_creation = set(int(instance['id']) for instance in logs_created_instances)
-            ids_logs_updation = set(int(instance['id']) for instance in logs_updated_instances)
 
-            updated_instances_from_logs_creation = instances_updated.query("id in @ids_logs_creation")
-            updated_instances_from_logs_updation = instances_updated.query("id not in @ids_logs_creation & id in @ids_logs_updation")
-            updated_instances_not_created_in_logs_updation = instances_updated.query("id not in @ids_logs_creation & id not in @ids_logs_updation")
-            
+            ids_logs_creation = set(
+                int(instance['id']) for instance in logs_created_instances)
+            ids_logs_updation = set(
+                int(instance['id']) for instance in logs_updated_instances)
+
+            updated_instances_from_logs_creation = instances_updated.query(
+                "id in @ids_logs_creation")
+            updated_instances_from_logs_updation = instances_updated.query(
+                "id not in @ids_logs_creation & id in @ids_logs_updation")
+            updated_instances_not_created_in_logs_updation = instances_updated.query(
+                "id not in @ids_logs_creation & id not in @ids_logs_updation")
+
             transaction_update_relation = {
                 'update': instances_updated.to_dict('records')
             }
-            
+
             transaction_update_logs_creation = {
                 'update': updated_instances_from_logs_creation.to_dict('records')
             }
@@ -189,7 +203,7 @@ class Callbacks:
                 transaction_upsert_logs_updation,
                 [],
             )
-        
+
         @server.callback(
             Output(ids.elements.operating_relation, "rowTransaction"),
             Output(ids.elements.logs_deletion, "rowTransaction"),
@@ -211,13 +225,13 @@ class Callbacks:
                 "addIndex": 0,
                 "add": selected_instances,
             }
-            
+
             return (
                 transaction_deleteRelationInstance,
                 transaction_addLogsDeletionInstances,
                 [],
             )
-        
+
         @server.callback(
             Output(ids.functionalities.upload_file, 'children'),
             Input(ids.functionalities.upload_file, 'contents'),
@@ -225,7 +239,7 @@ class Callbacks:
         )
         def log_uploaded_files(list_of_contents, filename):
             return dash_html.Div(filename)
-        
+
         @server.callback(
             Output(ids.elements.logs_creation, "rowData"),
             Output(ids.elements.logs_updation, "rowData"),
@@ -242,28 +256,29 @@ class Callbacks:
             instance_deleted,
         ):
             if instance_created:
-                DataManipulator.write(
+                DataManipulator.create(
                     engine=relation.connection.engine,
                     data=pandas.DataFrame(instance_created),
                     schema=relation.configuration.relation.schema,
                     relation=relation.configuration.relation.table,
                 )
             if instance_updated:
-                DataManipulator.write(
+                DataManipulator.create(
                     engine=relation.connection.engine,
                     data=pandas.DataFrame(instance_updated),
                     schema=relation.configuration.relation.schema,
                     relation=relation.configuration.relation.table,
                 )
             if instance_deleted:
-                DataManipulator.write(
+                DataManipulator.create(
                     engine=relation.connection.engine,
                     data=pandas.DataFrame(instance_deleted),
                     schema=relation.configuration.relation.schema,
                     relation=relation.configuration.relation.table,
                 )
             relation.reload()
-            empty = pandas.DataFrame(columns=relation.instances.keys()).to_dict('records')
+            empty = pandas.DataFrame(
+                columns=relation.instances.keys()).to_dict('records')
             return (
                 empty,
                 empty,

@@ -1,2 +1,4 @@
-from .objects import Configuration, configurationRole, configurationManageSystem, configurationRelation, Connection, Relation
+from .objects import (Configuration, Connection, Relation,
+                      configurationManageSystem, configurationRelation,
+                      configurationRole)
 from .operators import DataAccessor, DataManipulator

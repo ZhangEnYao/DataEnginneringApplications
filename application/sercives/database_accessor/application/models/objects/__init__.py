@@ -1,14 +1,17 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class configurationRole:
     user: str = None
     password: str = None
 
+
 @dataclass
 class configurationManageSystem:
     system: str = None
     connector: str = None
+
 
 @dataclass
 class configurationRelation:
@@ -19,6 +22,7 @@ class configurationRelation:
     table: str = None
     columns: str = None
     rows: str = None
+
 
 @dataclass
 class Configuration:

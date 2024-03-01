@@ -1,7 +1,12 @@
-from dash_extensions.enrich import MultiplexerTransform, DashProxy as Dash
 import dash_bootstrap_components
-from application.sercives.exploratory_data_analysis import UNIFORM_RESOURCE_LOCATOR_BASE_PATHNAME
+from dash_extensions.enrich import DashProxy as Dash
+from dash_extensions.enrich import MultiplexerTransform
+
+from application.sercives.exploratory_data_analysis import \
+    UNIFORM_RESOURCE_LOCATOR_BASE_PATHNAME
+
 from .source import layout
+
 
 def register_dash_service(
     server,

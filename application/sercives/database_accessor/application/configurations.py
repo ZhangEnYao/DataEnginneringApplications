@@ -1,11 +1,13 @@
 from dataclasses import dataclass
-from .models import Configuration, configurationRelation, configurationManageSystem, configurationRole
+
+from .models import (Configuration, configurationManageSystem,
+                     configurationRelation, configurationRole)
 
 '''
 schema:
     id, attribute, value
 '''
-configuration=Configuration(
+configuration = Configuration(
     role=configurationRole(
         'postgres',
         'postgres'
@@ -22,6 +24,7 @@ configuration=Configuration(
         'database_accessor_develop'
     )
 )
+
 
 @dataclass
 class Parameters:
