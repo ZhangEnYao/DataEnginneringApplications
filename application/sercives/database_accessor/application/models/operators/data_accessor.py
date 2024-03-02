@@ -9,7 +9,4 @@ class DataAccessor:
         engine: Engine,
         statement: str,
     ):
-        return pandas.read_sql(
-            sql=statement,
-            con=engine
-        )
+        return pandas.read_sql(sql=statement, con=engine)

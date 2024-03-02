@@ -4,13 +4,10 @@ from . import Configuration
 
 
 class Connection:
-    def __init__(
-        self,
-        configuration: Configuration
-    ):
+    def __init__(self, configuration: Configuration):
         self.configuration = configuration
         self._engine = create_engine(
-            '{system}+{connector}://{user}:{password}@{host}:{port}/{database}'.format(
+            "{system}+{connector}://{user}:{password}@{host}:{port}/{database}".format(
                 system=self.configuration.manage_system.system,
                 connector=self.configuration.manage_system.connector,
                 user=self.configuration.role.user,

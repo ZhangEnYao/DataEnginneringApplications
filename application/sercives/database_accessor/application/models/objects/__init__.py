@@ -30,5 +30,6 @@ class Configuration:
     manage_system: configurationManageSystem
     relation: configurationRelation
 
+
 from .connection import Connection
 from .relation import Relation
